@@ -1,10 +1,18 @@
 <script setup>
 import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
 import { ref } from 'vue';
+import { useAuthStore } from '@/stores';
 
 const email = ref('');
 const password = ref('');
 const checked = ref(false);
+const authStore = useAuthStore();
+
+function onDidClickSignIn() {
+    if (email.value && password.value) {
+        authStore.login(email.value, password.value) //, destination: this.$route.query.dest})
+    }
+}
 </script>
 
 <template>
@@ -31,7 +39,7 @@ const checked = ref(false);
                                 />
                             </g>
                         </svg>
-                        <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to PrimeLand!</div>
+                        <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">LIMS</div>
                         <span class="text-muted-color font-medium">Sign in to continue</span>
                     </div>
 
@@ -40,7 +48,16 @@ const checked = ref(false);
                         <InputText id="email1" type="text" placeholder="Email address" class="w-full md:w-[30rem] mb-8" v-model="email" />
 
                         <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                        <Password id="password1" v-model="password" placeholder="Password" :toggleMask="true" class="mb-4" fluid :feedback="false"></Password>
+                        <Password 
+                            id="password1"
+                            v-model="password"
+                            placeholder="Password"
+                            :toggleMask="true"
+                            class="mb-4"
+                            fluid
+                            :feedback="false"
+                            @keyup.enter="onDidClickSignIn"
+                        ></Password>
 
                         <div class="flex items-center justify-between mt-2 mb-8 gap-8">
                             <div class="flex items-center">
@@ -49,7 +66,7 @@ const checked = ref(false);
                             </div>
                             <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
                         </div>
-                        <Button label="Sign In" class="w-full" as="router-link" to="/"></Button>
+                        <Button label="Sign In" class="w-full" @click="onDidClickSignIn"></Button>
                     </div>
                 </div>
             </div>

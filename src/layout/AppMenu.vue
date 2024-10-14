@@ -4,13 +4,22 @@ import { ref } from 'vue';
 import AppMenuItem from './AppMenuItem.vue';
 
 const model = ref([
+    // {
+    //     label: 'Home',
+    //     items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' }]
+    // },
     {
-        label: 'Home',
-        items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' }]
+        label: 'LIMS Components',
+        items: [
+            { label: 'Specimens', icon: 'pi pi-fw pi-id-card', to: '/lims/specimens' },
+            { label: 'Plates', icon: 'pi pi-fw pi-id-card', to: '/lims/specimens' },
+            { label: 'Experiments', icon: 'pi pi-fw pi-id-card', to: '/lims/specimens' },
+        ]
     },
     {
-        label: 'UI Components',
+        label: 'UI Gallery',
         items: [
+            { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/dashboard' },
             { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/uikit/formlayout' },
             { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
             { label: 'Button', icon: 'pi pi-fw pi-mobile', to: '/uikit/button', class: 'rotated-icon' },

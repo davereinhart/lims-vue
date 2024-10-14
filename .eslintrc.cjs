@@ -10,6 +10,9 @@ module.exports = {
     parserOptions: {
         ecmaVersion: 'latest'
     },
+    stylistic: {
+        semi: false
+    },
     rules: {
         'vue/multi-word-component-names': 'off',
         'vue/no-reserved-component-names': 'off',

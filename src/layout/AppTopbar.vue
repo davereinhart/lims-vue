@@ -1,8 +1,12 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
-import AppConfigurator from './AppConfigurator.vue';
+// import AppConfigurator from './AppConfigurator.vue';
+import { useAuthStore } from '@/stores';
 
 const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
+
+const authStore = useAuthStore()
+
 </script>
 
 <template>
@@ -30,7 +34,7 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
                     </g>
                 </svg>
 
-                <span>SAKAI</span>
+                <span>LIMS</span>
             </router-link>
         </div>
 
@@ -39,7 +43,7 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
                 </button>
-                <div class="relative">
+                <!-- <div class="relative">
                     <button
                         v-styleclass="{ selector: '@next', enterFromClass: 'hidden', enterActiveClass: 'animate-scalein', leaveToClass: 'hidden', leaveActiveClass: 'animate-fadeout', hideOnOutsideClick: true }"
                         type="button"
@@ -48,7 +52,7 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
                         <i class="pi pi-palette"></i>
                     </button>
                     <AppConfigurator />
-                </div>
+                </div> -->
             </div>
 
             <button
@@ -60,17 +64,17 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action">
+                    <!-- <button type="button" class="layout-topbar-action">
                         <i class="pi pi-calendar"></i>
                         <span>Calendar</span>
                     </button>
                     <button type="button" class="layout-topbar-action">
                         <i class="pi pi-inbox"></i>
                         <span>Messages</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
+                    </button> -->
+                    <button type="button" class="layout-topbar-action" @click="authStore.logout()">
                         <i class="pi pi-user"></i>
-                        <span>Profile</span>
+                        <span>Logout</span>
                     </button>
                 </div>
             </div>

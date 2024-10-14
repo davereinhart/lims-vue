@@ -29,7 +29,7 @@ function smoothScroll(id) {
                             />
                         </g>
                     </svg>
-                    <span class="text-surface-900 dark:text-surface-0 font-medium text-2xl leading-normal mr-20">SAKAI</span>
+                    <span class="text-surface-900 dark:text-surface-0 font-medium text-2xl leading-normal mr-20">LIMS</span>
                 </a>
                 <Button
                     class="lg:!hidden"
@@ -402,7 +402,7 @@ function smoothScroll(id) {
                                     />
                                 </g>
                             </svg>
-                            <h4 class="font-medium text-3xl text-surface-900 dark:text-surface-0">SAKAI</h4>
+                            <h4 class="font-medium text-3xl text-surface-900 dark:text-surface-0">LIMS</h4>
                         </a>
                     </div>
 

@@ -1,5 +1,6 @@
-import AppLayout from '@/layout/AppLayout.vue';
-import { createRouter, createWebHistory } from 'vue-router';
+import AppLayout from '@/layout/AppLayout.vue'
+import { useAuthStore } from '@/stores'
+import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -10,8 +11,18 @@ const router = createRouter({
             children: [
                 {
                     path: '/',
+                    name: 'home',
+                    component: () => import('@/views/lims/SpecimensScreen.vue')
+                },
+                {
+                    path: '/dashboard',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
+                },
+                {
+                    path: '/lims/specimens',
+                    name: 'specimens',
+                    component: () => import('@/views/lims/SpecimensScreen.vue')
                 },
                 {
                     path: '/uikit/formlayout',
@@ -133,6 +144,22 @@ const router = createRouter({
             component: () => import('@/views/pages/auth/Error.vue')
         }
     ]
-});
+})
 
-export default router;
+router.beforeEach(async (to, from, next) => {
+    // redirect to login page if not logged in and trying to access a restricted page
+    const publicPages = ['/auth/login']
+    const authRequired = !publicPages.includes(to.path)
+    const auth = useAuthStore()
+    if (authRequired && !auth.user) {
+        auth.returnUrl = to.fullPath
+        return next({
+            path: '/auth/login',
+            params: {nextUrl: to.fullPath}
+        })
+    }
+
+    next()
+})
+
+export default router
