@@ -12,6 +12,7 @@ import SplitterPanel from 'primevue/splitterpanel';
 import { computed, onBeforeMount, ref } from 'vue';
 import { nullableDateTimeTester } from '@/helpers/jsonForms'
 
+
 const renderers = [
   ...vanillaRenderers,
   // here you can add custom renderers
@@ -29,6 +30,7 @@ const selectedRecords = ref(null)
 const modifiedRecords = ref(null)
 const metaKey = ref(true)
 const showEditForm = computed(() => selectedRecords.value?.length == 1)
+const showAddForm = ref(false)
 
 onBeforeMount(() => {
     SpecimenService.getSpecimensData().then((result) => {
@@ -36,6 +38,7 @@ onBeforeMount(() => {
         schema1.value = result?.data?.schema
         uiSchema1.value = Generate.uiSchema(schema1.value)
     })
+    
     initFilters1()
 })
 
@@ -69,7 +72,7 @@ function handleChange(value) {
 function didPressCancel() {
     selectedRecords.value = []
     modifiedRecords.value = null
-    isEditing.value = false
+    showAddForm.value = false
 }
 function didPressSubmit() {
     SpecimenService.updateSpecimensData(modifiedRecords.value).then((result) => {
@@ -81,7 +84,9 @@ function didPressSubmit() {
     
     selectedRecords.value = []
     modifiedRecords.value = null
-    isEditing.value = false
+}
+function addRecord() {
+    showAddForm.value = true
 }
 </script>
 
@@ -110,6 +115,7 @@ function didPressSubmit() {
                     <div class="flex justify-between">
                         <span class="text-xl font-bold">Specimens</span>
                         <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+                        <Button type="button" icon="pi pi-plus" label="New" outlined @click="addRecord()" />
                         <IconField>
                             <InputIcon>
                                 <i class="pi pi-search" />
@@ -138,15 +144,15 @@ function didPressSubmit() {
                 </Column>
             </DataTable>
         </SplitterPanel>
-        <SplitterPanel class="flex items-center justify-center" v-if="showEditForm" :size="34" :minSize="10">
-            <div v-if="selectedRecords?.length==1">
-                <JsonForms
-                    :schema="schema1"
-                    :uiSchema="uiSchema1"
-                    :renderers="renderers"
-                    :data="selectedRecords?.[0]"
-                    @change="handleChange"
-                />
+        <SplitterPanel class="flex items-center justify-center" v-if="showEditForm || showAddForm" :size="34" :minSize="10">
+            <JsonForms
+                :schema="schema1"
+                :uiSchema="uiSchema1"
+                :renderers="renderers"
+                :data="selectedRecords?.[0] || null"
+                @change="handleChange"
+            />
+            <div>
                 <Button severity="danger" label="Cancel" @click="didPressCancel"></Button>
                 <Button :disabled="!modifiedRecords" label="Submit" @click="didPressSubmit"></Button>
             </div>
