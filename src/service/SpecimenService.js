@@ -5,5 +5,12 @@ export const SpecimenService = {
     async getSpecimensData() {
         const specimens = await axios.get(`${baseUrl}/all`)
         return specimens
+    },
+
+    async updateSpecimensData(records) {
+        if (records.length == 1) {
+            const updatedRecords = await axios.put(`${baseUrl}/update`, records[0])
+            return updatedRecords
+        }
     }
 }
