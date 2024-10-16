@@ -1,175 +1,240 @@
 <script setup>
 import { SpecimenService } from '@/service/SpecimenService';
-import { Generate, rankWith } from '@jsonforms/core';
-import { JsonForms } from '@jsonforms/vue';
-import { vanillaRenderers, DateTimeControlRenderer } from "@jsonforms/vue-vanilla";
-import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
-import _ from 'lodash';
-import Button from 'primevue/button';
-import DatePicker from 'primevue/datepicker';
-import InputText from 'primevue/inputtext';
-import SplitterPanel from 'primevue/splitterpanel';
-import { computed, onBeforeMount, ref } from 'vue';
-import { nullableDateTimeTester } from '@/helpers/jsonForms'
+import { FilterMatchMode } from '@primevue/core/api';
+import { useToast } from 'primevue/usetoast';
+import { onMounted, ref } from 'vue';
+import _ from 'lodash'
 
-
-const renderers = [
-  ...vanillaRenderers,
-  // here you can add custom renderers
-  //{ tester: rankWith(50, isStringControl), renderer: InputText },
-  //{ tester: rankWith(100, nullableDateTimeTester), renderer: DatePicker },
-  { tester: rankWith(100, nullableDateTimeTester), renderer: DateTimeControlRenderer },
-]
-
-const filters1 = ref(null)
-const loading1 = ref(null)
-const specimens1 = ref(null)
-const schema1 = ref(null)
-const uiSchema1 = ref(null)
-const selectedRecords = ref(null)
-const modifiedRecords = ref(null)
-const metaKey = ref(true)
-const showEditForm = computed(() => selectedRecords.value?.length == 1)
-const showAddForm = ref(false)
-
-onBeforeMount(() => {
+onMounted(() => {
     SpecimenService.getSpecimensData().then((result) => {
-        specimens1.value = result?.data?.records
-        schema1.value = result?.data?.schema
-        uiSchema1.value = Generate.uiSchema(schema1.value)
+        specimens.value = result?.data?.records
     })
-    
-    initFilters1()
-})
+});
 
-function initFilters1() {
-    filters1.value = {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        created_at: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
-    }
-}
+const toast = useToast();
+const dt = ref();
+const specimens = ref();
+const showEditForm = ref(false);
+const deleteSpecimenDialog = ref(false);
+const deleteSpecimensDialog = ref(false);
+const specimen = ref({});
+const selectedSpecimens = ref();
+const filters = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+});
+const submitted = ref(false);
+const statuses = ref([
+    { label: 'INSTOCK', value: 'instock' },
+    { label: 'LOWSTOCK', value: 'lowstock' },
+    { label: 'OUTOFSTOCK', value: 'outofstock' }
+]);
 
-function formatDateString(value) {
-    const date = new Date(value)
+function formatDate(value) {
+    const date = value ? new Date(value) : null
     return date ? date.toISOString().split('T')[0] : ''
 }
 
-// function formatDate(value) {
-//     return value.toLocaleDateString('en-US', {
-//         day: '2-digit',
-//         month: '2-digit',
-//         year: 'numeric'
-//     })
-// }
-function handleChange(value) {
-    if (!_.isEqual(selectedRecords?.value?.[0], value?.data)) {
-        modifiedRecords.value = [value.data]
+function openNew() {
+    specimen.value = {};
+    submitted.value = false;
+    showEditForm.value = true;
+}
+
+function hideDialog() {
+    showEditForm.value = false;
+    submitted.value = false;
+}
+
+function saveSpecimen() {
+    submitted.value = true;
+
+    if (specimen.value.id) {
+        // updating single record
+        SpecimenService.updateSpecimens([specimen.value]).then((result) => {
+            const specimenToUpdate = _.find(specimens.value, { id: result?.data?.record?.id });
+            if (specimenToUpdate) {
+                _.assign(specimenToUpdate, result?.data?.record);
+            }
+            specimen.value = {};
+            hideDialog()
+        })
     } else {
-        modifiedRecords.value = null
+        // new record
+        SpecimenService.addSpecimens([specimen.value]).then((result) => {
+            specimens.value = _.concat(specimens.value, result?.data?.record)
+            specimen.value = {};
+            hideDialog()
+        })
     }
 }
-function didPressCancel() {
-    selectedRecords.value = []
-    modifiedRecords.value = null
-    showAddForm.value = false
+
+function editSpecimen(prod) {
+    specimen.value = { ...prod };
+    showEditForm.value = true;
 }
-function didPressSubmit() {
-    SpecimenService.updateSpecimensData(modifiedRecords.value).then((result) => {
-        const specimenToUpdate = _.find(specimens1.value, { id: result?.data?.record?.id });
-        if (specimenToUpdate) {
-            _.assign(specimenToUpdate, result?.data?.record);
+
+function confirmDeleteSpecimen(prod) {
+    specimen.value = prod;
+    deleteSpecimenDialog.value = true;
+}
+
+function deleteSpecimen() {
+    specimens.value = specimens.value.filter((val) => val.id !== specimen.value.id);
+    deleteSpecimenDialog.value = false;
+    specimen.value = {};
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'Specimen Deleted', life: 3000 });
+}
+
+function findIndexById(id) {
+    let index = -1;
+    for (let i = 0; i < specimens.value.length; i++) {
+        if (specimens.value[i].id === id) {
+            index = i;
+            break;
         }
-    })
-    
-    selectedRecords.value = []
-    modifiedRecords.value = null
+    }
+
+    return index;
 }
-function addRecord() {
-    showAddForm.value = true
+
+function exportCSV() {
+    dt.value.exportCSV();
 }
+
+function confirmDeleteSelected() {
+    deleteSpecimensDialog.value = true;
+}
+
+function deleteSelectedSpecimens() {
+    specimens.value = specimens.value.filter((val) => !selectedSpecimens.value.includes(val));
+    deleteSpecimensDialog.value = false;
+    selectedSpecimens.value = null;
+    toast.add({ severity: 'success', summary: 'Successful', detail: 'Specimens Deleted', life: 3000 });
+}
+
 </script>
 
 <template>
-    <Splitter class="data-table-wrapper">
+    <Splitter class="h-[calc(100vh-8rem)]">
         <SplitterPanel class="flex" :size="66" >
-            <DataTable
-                v-if="specimens1"
-                style="width:100%"
-                :value="specimens1"
-                selectionMode="multiple"
-                :metaKeySelection="metaKey"
-                v-model:selection="selectedRecords"
-                :paginator="false"
-                :rows="20"
-                dataKey="id"
-                :rowHover="true"
-                v-model:filters="filters1"
-                filterDisplay="menu"
-                :loading="loading1"
-                :filters="filters1"
-                :globalFilterFields="['name']"
-                showGridlines
-            >
-                <template #header>
-                    <div class="flex justify-between">
-                        <span class="text-xl font-bold">Specimens</span>
-                        <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
-                        <Button type="button" icon="pi pi-plus" label="New" outlined @click="addRecord()" />
-                        <IconField>
-                            <InputIcon>
-                                <i class="pi pi-search" />
-                            </InputIcon>
-                            <InputText v-model="filters1['global'].value" placeholder="Keyword Search" />
-                        </IconField>
-                    </div>
-                </template>
-                <template #empty> No specimens found. </template>
-                <template #loading> Loading specimens data. Please wait. </template>
-                <Column field="name" header="Name" style="min-width: 12rem">
-                    <template #body="{ data }">
-                        {{ data.name }}
+            <div class="w-full">
+                <Toolbar>
+                    <template #start>
+                        <Button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" @click="openNew" />
+                        <Button label="Delete" icon="pi pi-trash" severity="secondary" @click="confirmDeleteSelected" :disabled="!selectedSpecimens || !selectedSpecimens.length" />
                     </template>
-                    <template #filter="{ filterModel }">
-                        <InputText v-model="filterModel.value" type="text" placeholder="Search by name" />
+                    <template #end>
+                        <Button label="Export" icon="pi pi-upload" severity="secondary" @click="exportCSV($event)" />
                     </template>
-                </Column>
-                <Column field="created_at" header="Created" dataType="date" style="min-width: 12rem">
-                    <template #body="{ data }">
-                        {{ formatDateString(data.created_at) }}
+                </Toolbar>
+                <DataTable
+                    ref="dt"
+                    v-model:selection="selectedSpecimens"
+                    :value="specimens"
+                    dataKey="id"
+                    scrollable 
+                    scrollHeight="flex"
+                    :filters="filters"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} specimens"
+                >
+                    <template #header>
+                        <div class="flex flex-wrap gap-2 items-center justify-between">
+                            <h4 class="m-0">Specimens</h4>
+                            <IconField>
+                                <InputIcon>
+                                    <i class="pi pi-search" />
+                                </InputIcon>
+                                <InputText v-model="filters['global'].value" placeholder="Search..." />
+                            </IconField>
+                        </div>
                     </template>
-                    <template #filter="{ filterModel }">
-                        <DatePicker v-model="filterModel.value" dateFormat="yy-mm-dd" placeholder="yyyy-mm-dd" />
-                    </template>
-                </Column>
-            </DataTable>
-        </SplitterPanel>
-        <SplitterPanel class="flex items-center justify-center" v-if="showEditForm || showAddForm" :size="34" :minSize="10">
-            <JsonForms
-                :schema="schema1"
-                :uiSchema="uiSchema1"
-                :renderers="renderers"
-                :data="selectedRecords?.[0] || null"
-                @change="handleChange"
-            />
-            <div>
-                <Button severity="danger" label="Cancel" @click="didPressCancel"></Button>
-                <Button :disabled="!modifiedRecords" label="Submit" @click="didPressSubmit"></Button>
+
+                    <Column selectionMode="multiple" style="width: 3rem" :exportable="false"></Column>
+                    <Column field="name" header="Name" sortable style="min-width: 16rem"></Column>
+                    <Column field="created_at" header="Created" sortable style="min-width: 8rem">
+                        <template #body="slotProps">
+                            {{ formatDate(slotProps.data.created_at) }}
+                        </template>
+                    </Column>
+                    <Column field="updated_at" header="Updated" sortable style="min-width: 8rem">
+                        <template #body="slotProps">
+                            {{ formatDate(slotProps.data.updated_at) }}
+                        </template>
+                    </Column>
+                    <Column field="deleted_at" header="Deleted" sortable style="min-width: 8rem">
+                        <template #body="slotProps">
+                            {{ formatDate(slotProps.data.deleted_at) }}
+                        </template>
+                    </Column>
+                    <Column :exportable="false" style="min-width: 12rem">
+                        <template #body="slotProps">
+                            <Button icon="pi pi-pencil" text rounded class="mr-2" @click="editSpecimen(slotProps.data)" />
+                            <Button icon="pi pi-trash" text rounded severity="danger" @click="confirmDeleteSpecimen(slotProps.data)" />
+                        </template>
+                    </Column>
+                </DataTable>
             </div>
         </SplitterPanel>
+
+        <SplitterPanel v-if="showEditForm" class="flex" header="Specimen Details">
+            <div class="flex flex-col gap-6 p-10">
+                <div>
+                    <label for="name" class="block font-bold mb-3">Name</label>
+                    <InputText id="name" v-model.trim="specimen.name" required="true" autofocus :invalid="submitted && !specimen.name" fluid />
+                    <small v-if="submitted && !specimen.name" class="text-red-500">Name is required.</small>
+                </div>
+                <div>
+                    <label for="created_at" class="block font-bold mb-3">Created</label>
+                    <DatePicker 
+                        id="created_at"
+                        v-model.trim="specimen.created_at" 
+                        showTime 
+                        showIcon
+                        dateFormat="yy-mm-dd"
+                        hourFormat="24"
+                        autofocus 
+                        :invalid="submitted && !specimen.created_at" 
+                        fluid 
+                    />
+                    <small v-if="submitted && !specimen.created_at" class="text-red-500">Created timestamp is required.</small>
+                </div>
+                <div>
+                    <Button label="Cancel" icon="pi pi-times" text @click="hideDialog" />
+                    <Button label="Save" icon="pi pi-check" @click="saveSpecimen" />
+                </div>
+            </div>
+            
+        </SplitterPanel>
     </Splitter>
+        <Dialog v-model:visible="deleteSpecimenDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+            <div class="flex items-center gap-4">
+                <i class="pi pi-exclamation-triangle !text-3xl" />
+                <span v-if="specimen"
+                    >Are you sure you want to delete <b>{{ specimen.name }}</b
+                    >?</span
+                >
+            </div>
+            <template #footer>
+                <Button label="No" icon="pi pi-times" text @click="deleteSpecimenDialog = false" />
+                <Button label="Yes" icon="pi pi-check" @click="deleteSpecimen" />
+            </template>
+        </Dialog>
+
+        <Dialog v-model:visible="deleteSpecimensDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+            <div class="flex items-center gap-4">
+                <i class="pi pi-exclamation-triangle !text-3xl" />
+                <span v-if="specimen">Are you sure you want to delete the selected specimens?</span>
+            </div>
+            <template #footer>
+                <Button label="No" icon="pi pi-times" text @click="deleteSpecimensDialog = false" />
+                <Button label="Yes" icon="pi pi-check" text @click="deleteSelectedSpecimens" />
+            </template>
+        </Dialog>
 </template>
 
-<style scoped lang="scss">
-:deep(.p-datatable-frozen-tbody) {
-    font-weight: bold
-}
-
-:deep(.p-datatable-scrollable .p-frozen-column) {
-    font-weight: bold
-}
-
-.data-table-wrapper {
-    height: calc(100vh - 8rem)
+<style scoped>
+:deep(.p-datatable-tbody > tr > td) {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 </style>

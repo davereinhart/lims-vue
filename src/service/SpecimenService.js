@@ -7,11 +7,19 @@ export const SpecimenService = {
         return specimens
     },
 
-    async updateSpecimensData(records) {
+    async updateSpecimens(records) {
         if (records.length == 1) {
             const {id, ...values} = records[0]
             const updatedRecords = await axios.put(`${baseUrl}/${id}`, values)
             return updatedRecords
+        }
+    },
+
+    async addSpecimens(records) {
+        if (records.length == 1) {
+            const {id, ...values} = records[0]
+            const newRecords = await axios.post(`${baseUrl}`, values)
+            return newRecords
         }
     }
 }
