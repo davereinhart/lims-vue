@@ -9,7 +9,8 @@ export const SpecimenService = {
 
     async updateSpecimensData(records) {
         if (records.length == 1) {
-            const updatedRecords = await axios.put(`${baseUrl}/${records[0].id}`, records[0])
+            const {id, ...values} = records[0]
+            const updatedRecords = await axios.put(`${baseUrl}/${id}`, values)
             return updatedRecords
         }
     }
