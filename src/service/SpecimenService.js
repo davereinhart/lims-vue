@@ -21,5 +21,16 @@ export const SpecimenService = {
             const newRecords = await axios.post(`${baseUrl}`, values)
             return newRecords
         }
-    }
+    },
+
+    async deleteSpecimens(records) {
+        console.log(records)
+        const deletedRecords = []
+        for (const {id} of records) {
+            console.log(id)
+            const {data} = await axios.delete(`${baseUrl}/${id}`)
+            deletedRecords.push(data)
+        }
+        return deletedRecords
+    },
 }

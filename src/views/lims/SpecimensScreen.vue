@@ -23,11 +23,6 @@ const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 const submitted = ref(false);
-const statuses = ref([
-    { label: 'INSTOCK', value: 'instock' },
-    { label: 'LOWSTOCK', value: 'lowstock' },
-    { label: 'OUTOFSTOCK', value: 'outofstock' }
-]);
 
 function formatDate(value) {
     const date = value ? new Date(value) : null
@@ -48,7 +43,7 @@ function hideDialog() {
 function saveSpecimen() {
     submitted.value = true;
 
-    if (specimen.value.id) {
+    if (_.has(specimen.value, 'id')) {
         // updating single record
         SpecimenService.updateSpecimens([specimen.value]).then((result) => {
             const specimenToUpdate = _.find(specimens.value, { id: result?.data?.record?.id });
@@ -78,23 +73,23 @@ function confirmDeleteSpecimen(prod) {
     deleteSpecimenDialog.value = true;
 }
 
-function deleteSpecimen() {
-    specimens.value = specimens.value.filter((val) => val.id !== specimen.value.id);
-    deleteSpecimenDialog.value = false;
-    specimen.value = {};
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Specimen Deleted', life: 3000 });
-}
-
-function findIndexById(id) {
-    let index = -1;
-    for (let i = 0; i < specimens.value.length; i++) {
-        if (specimens.value[i].id === id) {
-            index = i;
-            break;
+function deleteSpecimens(specimensToDelete) {
+    SpecimenService.deleteSpecimens(specimensToDelete).then((result) => {
+        const deletedSpecimenIds = _.compact(_.map(result || [], (x) => x.record?.id))
+        if (deletedSpecimenIds.length > 0) {
+            specimens.value = specimens.value.filter((val) => !deletedSpecimenIds.includes(val.id));
+            deleteSpecimenDialog.value = false;
+            deleteSpecimensDialog.value = false;
+            specimen.value = {};
+            selectedSpecimens.value = null;
+            toast.add({ severity: 'success', summary: 'Successful', detail: `${deletedSpecimenIds.length} Specimen(s) Deleted`, life: 3000 });
+        } else {
+            deleteSpecimenDialog.value = false;
+            deleteSpecimensDialog.value = false;
+            specimen.value = {};
+            toast.add({ severity: 'error', summary: 'Failed', detail: 'No Specimens Deleted', life: 3000 });
         }
-    }
-
-    return index;
+    })
 }
 
 function exportCSV() {
@@ -106,12 +101,8 @@ function confirmDeleteSelected() {
 }
 
 function deleteSelectedSpecimens() {
-    specimens.value = specimens.value.filter((val) => !selectedSpecimens.value.includes(val));
-    deleteSpecimensDialog.value = false;
-    selectedSpecimens.value = null;
-    toast.add({ severity: 'success', summary: 'Successful', detail: 'Specimens Deleted', life: 3000 });
+    deleteSpecimens(selectedSpecimens.value)
 }
-
 </script>
 
 <template>
@@ -135,7 +126,6 @@ function deleteSelectedSpecimens() {
                     scrollable 
                     scrollHeight="flex"
                     :filters="filters"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} specimens"
                 >
                     <template #header>
                         <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -216,7 +206,7 @@ function deleteSelectedSpecimens() {
             </div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" text @click="deleteSpecimenDialog = false" />
-                <Button label="Yes" icon="pi pi-check" @click="deleteSpecimen" />
+                <Button label="Yes" icon="pi pi-check" @click="deleteSpecimens([specimen])" />
             </template>
         </Dialog>
 
@@ -225,9 +215,10 @@ function deleteSelectedSpecimens() {
                 <i class="pi pi-exclamation-triangle !text-3xl" />
                 <span v-if="specimen">Are you sure you want to delete the selected specimens?</span>
             </div>
+            <div>{{  selectedSpecimens }}</div>
             <template #footer>
                 <Button label="No" icon="pi pi-times" text @click="deleteSpecimensDialog = false" />
-                <Button label="Yes" icon="pi pi-check" text @click="deleteSelectedSpecimens" />
+                <Button label="Yes" icon="pi pi-check" text @click="deleteSpecimens(selectedSpecimens)" />
             </template>
         </Dialog>
 </template>
